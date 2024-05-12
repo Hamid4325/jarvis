@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, send_from_directory, request, jsonify
 import groq
 import pyttsx3
 import speech_recognition as sr
@@ -64,7 +64,7 @@ def GPT(messages, *args):
 # Route for homepage
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return send_from_directory(os.path.join(app.root_path, ''), 'index.html')
 
 # Route for processing user query
 @app.route('/process_query', methods=['POST'])
