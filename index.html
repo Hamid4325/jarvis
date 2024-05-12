@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis Web Assistant</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <script>
+        function checkSpeechCompletion() {
+            fetch('/check_speech', {method: 'GET'})
+                .then(response => response.json())
+                .then(data => {
+                    if (data.completed) {
+                        updateResponse(data.response); // Update response if completed
+                    } else {
+                        setTimeout(checkSpeechCompletion, 1000); // Check again after 1 second
+                    }
+                })
+                .catch(error => console.error(error));
+        }
+
+        function updateResponse(response) {
+            document.getElementById('response').textContent = response;
+        }
+
+        function stopSpeaking() {
+            // Stop the speech synthesis
+            speechSynthesis.cancel();
+        }
+    </script>
+    <style>
+        body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f7f7f7;
+    text-align: center;
+}
+
+h1 {
+    margin-top: 2em;
+    color: #4a4a4a;
+}
+
+#query-form {
+    margin-top: 2em;
+}
+
+label {
+    font-size: 1.2em;
+    margin-right: 0.5em;
+    color: #5a5a5a;
+}
+
+input[type="text"] {
+    font-size: 1em;
+    padding: 0.5em;
+    width: 60%;
+    max-width: 300px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    position: relative;
+}
+
+input[type="text"]::-ms-clear {
+    display: none;
+}
+
+button[type="submit"], button.clear-text, button.stop {
+    font-size: 1em;
+    padding: 0.5em 1em;
+    border: none;
+    border-radius: 5px;
+    background-color: #333;
+    color: #fff;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+button.clear-text {
+    font-size: 0.8em; /* Smaller font size for the "X" button */
+    padding: 0.2em 0.5em; /* Smaller padding for a smaller button */
+    margin-left: -40px; /* Adjust as needed to position inside the input field */
+    position: relative;
+    z-index: 10;
+}
+
+/* Ensure other buttons have consistent styling */
+button[type="submit"], button.stop {
+    font-size: 1em;
+    padding: 0.5em 1em;
+    border: none;
+    border-radius: 5px;
+    background-color: #333;
+    color: #fff;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+#response {
+    margin-top: 2em;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 1em;
+    border-radius: 5px;
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+    white-space: pre-line;
+    box-shadow: 5px 5px 4px 4px gray;
+}
+    </style>
+</head>
+<body>
+<h1>Jarvis Web Assistant</h1>
+<form id="query-form">
+    <div style="position: relative; display: inline-block;">
+        <label for="query">Enter query:</label>
+        <input type="text" id="query" name="query" size="100" placeholder="Type here...">
+        <button type="button" class="clear-text" onclick="document.getElementById('query').value = ''">X</button>
+    </div>     
+    <button type="submit">Submit</button>
+    <button type="button" class="stop" onclick="stopSpeaking()">Stop</button>
+</form>
+<div id="response">
+    {% if response %}
+    <strong>Response:</strong> {{ response }}
+    {% endif %}
+</div>
+
+<script>
+    function speakResponse(text) {
+        var utterance = new SpeechSynthesisUtterance(text);
+        speechSynthesis.speak(utterance);
+    }
+
+    document.getElementById('query-form').addEventListener('submit', function (event) {
+        event.preventDefault();
+        var query = document.getElementById('query').value;
+        fetch('/process_query', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'query=' + encodeURIComponent(query),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.response) {
+                // Update response area with the response text
+                document.getElementById('response').innerHTML = "<strong>Response:</strong> " + data.response;
+                // Speak the response
+                speakResponse(data.response);
+            } else {
+                console.error("Invalid response format:", data);
+                document.getElementById('response').innerHTML = "<strong>Response:</strong> Error: Invalid response format";
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching response:", error);
+            document.getElementById('response').innerHTML = "<strong>Response:</strong> Error: " + error;
+        });
+    });
+
+    checkSpeechCompletion(); // Start checking for completion after page load
+</script>
+</body>
+</html>
