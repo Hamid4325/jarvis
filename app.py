@@ -31,7 +31,7 @@ def talk(text, callback=None):
     engine.runAndWait()
 
 # Initialize Groq client
-api_key = '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'
+api_key = 'Your_Api_Key'
 client = Groq(api_key=api_key)
 
 # List to store chat messages
